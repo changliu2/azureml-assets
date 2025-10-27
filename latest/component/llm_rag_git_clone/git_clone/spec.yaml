@@ -1,9 +1,10 @@
-$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
 type: command
 
 tags:
   Preview: ""
-version: 0.0.70
+version: 0.0.82
 name: llm_rag_git_clone
 display_name: LLM - Clone Git Repo
 is_deterministic: true
@@ -18,14 +19,14 @@ inputs:
   branch_name:
     type: string
     optional: true
-    description: "The branch name to pull from the git repository, default picked\
-      \ by git if not specified."
+    description: "The branch name to pull from the git repository, default picked
+      by git if not specified."
   authentication_key_prefix:
     type: string
     optional: true
-    description: "<PREFIX>-USER and <PREFIX>-PASS are the expected names of two Secrets\
-      \ in the Workspace Key Vault which will be used for authenticated when pulling\
-      \ the given git repo."
+    description: "<PREFIX>-USER and <PREFIX>-PASS are the expected names of two Secrets
+      in the Workspace Key Vault which will be used for authenticated when pulling
+      the given git repo."
   git_connection_id:
     type: string
     optional: true
@@ -37,7 +38,7 @@ outputs:
     description: "Uri folder containing all files from the git repo"
     mode: upload
 
-environment: azureml:llm-rag-embeddings@latest
+environment: azureml:llm-rag-embeddings:76
 code: '../src/'
 
 command: >-

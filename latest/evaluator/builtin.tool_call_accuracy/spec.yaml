@@ -1,0 +1,57 @@
+type: "evaluator"
+name: "builtin.tool_call_accuracy"
+version: 1
+displayName: "Tool-Call-Accuracy-Evaluator"
+description: "Measures whether tools or functions were used correctly in the response.
+  Ensures actions align with intended tool behavior. Use this metric in agent-based
+  systems, orchestration platforms, and AI assistants that rely on tool integration."
+evaluatorType: "builtin"
+evaluatorSubType: "code"
+categories: ["agents"]
+tags:
+  provider: "Microsoft"
+initParameterSchema:
+  type: "object"
+  properties:
+    deployment_name:
+      type: "string"
+    threshold:
+      type: "number"
+      minimum: 1
+      maximum: 5
+      multipleOf: 1
+  required: ["deployment_name"]
+dataMappingSchema:
+  type: "object"
+  properties:
+    query:
+      anyOf:
+      - type: "string"
+      - type: "array"
+        items:
+          type: "object"
+    tool_definitions:
+      anyOf:
+      - type: "object"
+      - type: "array"
+        items:
+          type: "object"
+    tool_calls:
+      anyOf:
+      - type: "object"
+      - type: "array"
+        items:
+          type: "object"
+    response:
+      anyOf:
+      - type: "string"
+      - type: "array"
+        items:
+          type: "object"
+outputSchema:
+  tool_call_accuracy:
+    type: "ordinal"
+    desirable_direction: "increase"
+    min_value: 1
+    max_value: 5
+path: ./evaluator

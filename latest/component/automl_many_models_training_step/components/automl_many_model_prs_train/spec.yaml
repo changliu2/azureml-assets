@@ -1,8 +1,9 @@
-$schema: https://azuremlschemas.azureedge.net/latest/parallelComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/parallelComponent.schema.json
 
 name: automl_many_models_training_step
 display_name: AutoML Many Models - AutoML Training
-version: 0.0.6
+version: 0.0.10
 is_deterministic: false
 
 type: parallel
@@ -63,7 +64,7 @@ task:
   type: run_function
   code: ../../src/train
   entry_script: train.py
-  environment: azureml://registries/azureml/environments/automl-gpu/labels/latest
+  environment: azureml://registries/azureml/environments/automl-gpu/versions/54
   program_arguments: >-
     --input-metadata ${{inputs.metadata}}
     --error_threshold -1

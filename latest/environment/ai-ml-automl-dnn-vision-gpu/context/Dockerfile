@@ -1,5 +1,4 @@
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu121-py310-torch222:biweekly.202409.3
-
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/azureml-automl-dnn-vision-gpu
 # Prepend path to AzureML conda environment
@@ -12,8 +11,33 @@ ENV MLFLOW_MODEL_FOLDER="mlflow-model"
 # ENV AZUREML_ENTRY_SCRIPT="mlflow_score_script.py"
 
 # Inference requirements
-COPY --from=mcr.microsoft.com/azureml/o16n-base/python-assets:20230419.v1 /artifacts /var/
-RUN /var/requirements/install_system_requirements.sh && \
+COPY --from=mcr.microsoft.com/azureml/o16n-base/python-assets:20250310.v1 /artifacts /var/
+RUN apt-get update && \
+    apt-get install -y --only-upgrade \
+        libpython3.10-stdlib \
+        python3.10 \
+        libpython3.10-minimal \
+        python3.10-minimal \
+        libpam0g \
+        libpam-modules-bin \
+        libpam-modules \
+        libpam-runtime && \
+    apt-get install -y sudo=1.9.9-1ubuntu2.5 && \
+    apt-mark hold sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libcurl4 \
+        liblttng-ust1 \
+        libunwind8 \
+        libxml++2.6-2v5 \
+        nginx-light \
+        psmisc \
+        rsyslog \
+        runit \
+        unzip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     cp /var/configuration/rsyslog.conf /etc/rsyslog.conf && \
     cp /var/configuration/nginx.conf /etc/nginx/sites-available/app && \
     ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app && \
@@ -36,7 +60,7 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     shap=0.39.0 \
     llvmlite=0.39.1 \
     scipy=1.10.1 \
-    setuptools=72.1.0 \
+    setuptools=78.1.1 \
     wheel=0.44.0 \
     tbb=2021.1.1 \
     # end conda dependencies
@@ -50,25 +74,43 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
 # Install pip dependencies
 RUN pip install \
                  # begin pypi dependencies
-                azureml-mlflow==1.57.0.post1 \
-                azureml-dataset-runtime==1.57.0 \
-                azureml-telemetry==1.57.0 \
-                azureml-responsibleai==1.57.0 \
-                azureml-automl-core==1.57.0 \
-                azureml-automl-runtime==1.57.0 \
-                azureml-train-automl-client==1.57.0 \
-                azureml-defaults==1.57.0.post1 \
-                azureml-interpret==1.57.0 \
-                azureml-train-automl-runtime==1.57.0 \
-                azureml-automl-dnn-vision==1.57.0.post2 \
+                azureml-mlflow==1.60.0.post1 \
+                azureml-dataset-runtime==1.60.0 \
+                azureml-telemetry==1.60.0 \
+                azureml-responsibleai==1.60.0 \
+                azureml-automl-core==1.60.0 \
+                azureml-automl-runtime==1.60.0 \
+                azureml-train-automl-client==1.60.0 \
+                azureml-defaults==1.60.0 \
+                azureml-interpret==1.60.0 \
+                azureml-train-automl-runtime==1.60.0 \
+                azureml-automl-dnn-vision==1.60.0 \
                 'azureml-dataprep>=2.24.4' \
+                'requests>=2.32.4' \
                 'azure-identity>=1.16.1'
                 # end pypi dependencies
 
 # Update cryptography and pyarow for fixing vulnerability. Doing it  separately from pip install to avoid conflict with other packages
 RUN pip install cryptography>=42.0.5 \
                 pyarrow==14.0.2 \
-                aiohttp>=3.9.4
+                aiohttp>=3.12.14
+
+# Patch for pillow vulnerability
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --upgrade 'pillow==11.3.0'
+RUN /opt/conda/bin/pip install --upgrade 'pillow==11.3.0' 
+RUN /opt/conda/envs/ptca/bin/pip install --upgrade 'pillow==11.3.0'
+                
+# Upgrade torch, requests, urllib3 in the system Python for fixing vulnerability
+RUN /opt/conda/bin/pip install --upgrade 'urllib3==2.5.0'
+RUN /opt/conda/envs/ptca/bin/pip install --upgrade 'urllib3==2.5.0'
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --upgrade 'urllib3==2.5.0'
+
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --force-reinstall 'torch==2.7.1' torchvision==0.22.1 
+RUN /opt/conda/envs/ptca/bin/pip install --force-reinstall 'torch==2.7.1' torchvision==0.22.1 
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --upgrade 'mlflow==3.1.4'
+
+RUN $AZUREML_CONDA_ENVIRONMENT_PATH/bin/pip install --upgrade 'h2>=4.3.0'
+RUN rm -rf /opt/conda/pkgs/
 
 # end pip install
 ENV LD_LIBRARY_PATH $AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH

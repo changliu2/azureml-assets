@@ -1,5 +1,5 @@
 # PTCA Image (enabling Singularity Support)
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu118-py310-torch222:biweekly.202410.1
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 RUN apt-get update && apt-get -y upgrade
 
@@ -22,3 +22,7 @@ ENV PATH=$CONDA_PREFIX/bin:$PATH
 
 # This is needed for mpi to locate libpython
 ENV LD_LIBRARY_PATH $CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+
+# Temp fix for env vuln
+RUN pip install mlflow==3.5.1
+RUN pip install transformers==4.57.1

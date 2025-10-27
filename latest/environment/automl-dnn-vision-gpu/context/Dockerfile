@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu121-py310-torch222:biweekly.202409.3
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 
 ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/azureml-automl-dnn-vision-gpu
@@ -12,12 +12,29 @@ ENV MLFLOW_MODEL_FOLDER="mlflow-model"
 # ENV AZUREML_ENTRY_SCRIPT="mlflow_score_script.py"
 
 # Inference requirements
-COPY --from=mcr.microsoft.com/azureml/o16n-base/python-assets:20230419.v1 /artifacts /var/
-RUN /var/requirements/install_system_requirements.sh && \
+COPY --from=mcr.microsoft.com/azureml/o16n-base/python-assets:20250310.v1 /artifacts /var/
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        libcurl4 \
+        liblttng-ust1 \
+        libunwind8 \
+        libxml++2.6-2v5 \
+        nginx-light \
+        psmisc \
+        rsyslog \
+        runit \
+        unzip && \
+    apt-get clean && rm -rf /var/lib/apt/lists/* && \
     cp /var/configuration/rsyslog.conf /etc/rsyslog.conf && \
     cp /var/configuration/nginx.conf /etc/nginx/sites-available/app && \
     ln -sf /etc/nginx/sites-available/app /etc/nginx/sites-enabled/app && \
     rm -f /etc/nginx/sites-enabled/default
+# Upgrade sudo to patch known vulnerability
+RUN apt-get update && \
+    apt-get install -y sudo=1.9.9-1ubuntu2.5 && \
+    apt-mark hold sudo && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
 ENV SVDIR=/var/runit
 ENV WORKER_TIMEOUT=400
 EXPOSE 5001 8883 8888
@@ -33,6 +50,17 @@ RUN conda env create -p $AZUREML_CONDA_ENVIRONMENT_PATH -f conda_dependencies.ya
 
 # vulnearbility fix
 RUN pip install pyarrow==14.0.2
+RUN pip install torch==2.7.1 torchvision==0.22.1
+RUN opt/conda/envs/ptca/bin/pip install torch==2.7.1 torchvision==0.22.1 || true
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install 2.7.1 torchvision==0.22.1 || true
+RUN opt/conda/envs/ptca/bin/pip install --upgrade urllib3 || true
+RUN opt/conda/bin/pip install --upgrade requests urllib3 || true
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --upgrade urllib3 || true
+# Patch pillow vulnerability
+RUN /azureml-envs/azureml-automl-dnn-vision-gpu/bin/pip install --upgrade pillow==11.3.0 || true
+RUN /opt/conda/bin/pip install --upgrade pillow==11.3.0 || true
+RUN /opt/conda/envs/ptca/bin/pip install --upgrade pillow==11.3.0 || true
+
 
 ENV LD_LIBRARY_PATH $AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH
 # dummy number to change when needing to force rebuild without changing the definition: 1

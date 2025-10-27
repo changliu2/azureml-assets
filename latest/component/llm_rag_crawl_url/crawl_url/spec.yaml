@@ -1,15 +1,16 @@
-$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
 type: command
 
 tags:
   Preview: ""
-version: 0.0.31
+version: 0.0.43
 name: llm_rag_crawl_url
 display_name: LLM - Crawl URL to Retrieve Data
 is_deterministic: true
 
-description: "Crawls the given URL and nested links to `max_crawl_depth`. Data is\
-  \ stored to `output_path`."
+description: "Crawls the given URL and nested links to `max_crawl_depth`. Data is
+  stored to `output_path`."
 outputs:
   output_path:
     type: uri_folder
@@ -55,7 +56,7 @@ inputs:
     default: false
     description: Whether to support crawling http links.
 
-environment: azureml:llm-rag-embeddings@latest
+environment: azureml:llm-rag-embeddings:76
 code: '../src/'
 
 command: >-

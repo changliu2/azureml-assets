@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:20240918.v1
+FROM mcr.microsoft.com/azureml/openmpi5.0-ubuntu24.04:20251002.v1
 
 
 ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/azureml-automl
@@ -12,6 +12,16 @@ ENV MLFLOW_MODEL_FOLDER="mlflow-model"
 
 ENV ENABLE_METADATA=true
 
+# System package security upgrades
+RUN apt-get update && \
+    apt-get install -y --only-upgrade \
+        libpam0g \
+        libpam-modules \
+        libpam-modules-bin \
+        libpam-runtime && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
 # begin conda create
 # Create conda environment
 RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
@@ -21,8 +31,9 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     py-cpuinfo=5.0.0 \
     joblib=1.2.0 \
     setuptools-git \
+    setuptools=78.1.1 \
     'psutil>5.0.0,<6.0.0' \
-    pytorch=2.2.2 \
+    pytorch=2.7.1 \
     # end conda dependencies
     -c conda-forge -c pytorch -c anaconda -c nvidia && \
     conda run -p $AZUREML_CONDA_ENVIRONMENT_PATH && \
@@ -33,30 +44,33 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
 # Install pip dependencies
 RUN pip install \
                 # begin pypi dependencies
-                azureml-core==1.57.0.post3 \
-                azureml-mlflow==1.57.0.post1 \
-                azureml-pipeline-core==1.57.0 \
-                azureml-telemetry==1.57.0 \
-                azureml-interpret==1.57.0 \
-                azureml-responsibleai==1.57.0 \
-                azureml-automl-core==1.57.0 \
-                azureml-automl-runtime==1.57.0 \
-                azureml-train-automl-client==1.57.0 \
-                azureml-train-automl-runtime==1.57.0 \
-                azureml-train-automl==1.57.0 \
-                azureml-dataset-runtime==1.57.0 \
-                azureml-defaults==1.57.0.post1 \
+                azureml-core==1.60.0.post1 \
+                azureml-mlflow==1.60.0.post1 \
+                azureml-pipeline-core==1.60.0 \
+                azureml-telemetry==1.60.0 \
+                azureml-interpret==1.60.0 \
+                azureml-responsibleai==1.60.0 \
+                azureml-automl-core==1.60.0 \
+                azureml-automl-runtime==1.60.0 \
+                azureml-train-automl-client==1.60.0 \
+                azureml-train-automl-runtime==1.60.0 \
+                azureml-train-automl==1.60.0 \
+                azureml-dataset-runtime==1.60.0 \
+                azureml-defaults==1.60.0 \
                 # TODO: replace the hard coded above by a referenceto azureml-train-automl[tabular]
-                'mlflow-skinny==2.9.2' \
+                'mlflow-skinny==2.15.1' \
                 'xgboost==1.5.2' \
                 'prophet==1.1.4' \
                 'inference-schema' \
-                'mltable>=1.0.0'
+                'mltable>=1.0.0' \
+                'pillow==11.3.0'
                 # end pypi dependencies
 # end pip install
 
 # begin pip ad-hoc
 # Install pip ad-hoc dependencies for security updates
 RUN pip install --upgrade 'pyarrow==14.0.2'
+RUN pip install torch==2.7.1 torchvision==0.22.1
+RUN pip install urllib3==2.5.0
 # end pip ad-hoc
 

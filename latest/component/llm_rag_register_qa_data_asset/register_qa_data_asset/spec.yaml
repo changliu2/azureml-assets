@@ -1,9 +1,10 @@
-$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
 type: command
 
 tags:
   Preview: ""
-version: 0.0.63
+version: 0.0.75
 name: llm_rag_register_qa_data_asset
 display_name: LLM - Register QA Generation Data Asset
 is_deterministic: true
@@ -30,11 +31,11 @@ inputs:
     - "True"
     - "False"
     default: "False"
-    description: "Boolean to determine whether generated data should be saved as an\
-      \ AzureML Dataset"
+    description: "Boolean to determine whether generated data should be saved as an
+      AzureML Dataset"
 
 
-environment: azureml:llm-rag-embeddings@latest
+environment: azureml:llm-rag-embeddings:76
 code: '../src/embeddings/'
 command: >-
   python register_qa_data.py

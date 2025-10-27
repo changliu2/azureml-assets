@@ -1,6 +1,7 @@
-$schema: https://azuremlschemas.azureedge.net/latest/pipelineComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/pipelineComponent.schema.json
 name: oss_chat_completion_pipeline
-version: 0.0.23
+version: 0.0.28
 type: pipeline
 display_name: OSS Chat Completion Pipeline
 description: FTaaS Pipeline component for chat completion
@@ -11,16 +12,18 @@ inputs:
     type: string
     optional: true
     default: Singularity.D8_v3
-    description: Instance type to be used for data_import component in case of virtual
-      cluster compute, eg. Singularity.D8_v3. The parameter compute_data_import must
-      be set to 'virtual cluster' for instance_type to be used
+    description: Instance type to be used for data_import component in case of 
+      virtual cluster compute, eg. Singularity.D8_v3. The parameter 
+      compute_data_import must be set to 'virtual cluster' for instance_type to 
+      be used
   instance_type_finetune:
     type: string
     optional: true
     default: Singularity.ND40_v2
-    description: Instance type to be used for finetune component in case of virtual
-      cluster compute, eg. Singularity.ND40_v2. The parameter compute_finetune must
-      be set to 'virtual cluster' for instance_type to be used
+    description: Instance type to be used for finetune component in case of 
+      virtual cluster compute, eg. Singularity.ND40_v2. The parameter 
+      compute_finetune must be set to 'virtual cluster' for instance_type to be 
+      used
   number_of_gpu_to_use_finetuning:
     type: integer
     default: 1
@@ -33,31 +36,31 @@ inputs:
   mlflow_model_path:
     type: mlflow_model
     optional: true
-    description: MLflow model asset path. Special characters like \ and ' are invalid
-      in the parameter value.
+    description: MLflow model asset path. Special characters like \ and ' are 
+      invalid in the parameter value.
     mode: download
   pytorch_model_path:
     type: custom_model
     optional: true
-    description: Pytorch model asset path. Special characters like \ and ' are invalid
-      in the parameter value.
+    description: Pytorch model asset path. Special characters like \ and ' are 
+      invalid in the parameter value.
     mode: download
 
   # Dataset path Parameters
   train_file_path:
     type: uri_file
     optional: false
-    description: Path to the registered training data asset. The supported data formats
-      are `jsonl`, `json`, `csv`, `tsv` and `parquet`. Special characters like \ and
-      ' are invalid in the parameter value.
+    description: Path to the registered training data asset. The supported data 
+      formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`. Special 
+      characters like \ and ' are invalid in the parameter value.
     mode: rw_mount
 
   validation_file_path:
     type: uri_file
     optional: true
-    description: Path to the registered validation data asset. The supported data
-      formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`. Special characters
-      like \ and ' are invalid in the parameter value.
+    description: Path to the registered validation data asset. The supported 
+      data formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`. Special 
+      characters like \ and ' are invalid in the parameter value.
     mode: rw_mount
 
   # Finetuning parameters
@@ -135,7 +138,7 @@ outputs:
 jobs:
   oss_text_generation_data_import:
     type: command
-    component: azureml:oss_text_generation_data_import:0.0.23
+    component: azureml:oss_text_generation_data_import:0.0.28
     compute: '${{parent.inputs.compute_data_import}}'
     resources:
       instance_type: '${{parent.inputs.instance_type_data_import}}'
@@ -154,7 +157,7 @@ jobs:
       user_column_names: 'messages'
   oss_chat_completion_finetune:
     type: command
-    component: azureml:oss_chat_completion_finetune:0.0.23
+    component: azureml:oss_chat_completion_finetune:0.0.28
     compute: '${{parent.inputs.compute_finetune}}'
     resources:
       instance_type: '${{parent.inputs.instance_type_finetune}}'
@@ -184,7 +187,7 @@ jobs:
       per_device_train_batch_size: '${{parent.inputs.per_device_train_batch_size}}'
       per_device_eval_batch_size: '${{parent.inputs.per_device_train_batch_size}}'
       auto_find_batch_size: "false"
-      optim: adamw_hf
+      optim: adamw_torch
       learning_rate: '${{parent.inputs.learning_rate}}'
       warmup_steps: 0
       weight_decay: 0.1

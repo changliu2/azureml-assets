@@ -1,6 +1,7 @@
-$schema: https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
+$schema: 
+  https://azuremlschemas.azureedge.net/latest/commandComponent.schema.json
 name: oss_distillation_validate_pipeline
-version: 0.0.3
+version: 0.0.5
 type: command
 
 is_deterministic: true
@@ -8,7 +9,8 @@ is_deterministic: true
 display_name: OSS Distillation Validate Pipeline
 description: Component to validate inputs to the distillation pipeline
 
-environment: azureml://registries/azureml/environments/acft-hf-nlp-gpu/versions/66
+environment: 
+  azureml://registries/azureml/environments/acft-hf-nlp-gpu/versions/81
 
 code: ../../src
 
@@ -16,15 +18,15 @@ inputs:
   # Inputs
   train_file_path:
     type: uri_file
-    description: Path to the registered training data asset. The supported data formats
-      are `jsonl`, `json`, `csv`, `tsv` and `parquet`.
+    description: Path to the registered training data asset. The supported data 
+      formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`.
     mode: rw_mount
 
   validation_file_path:
     type: uri_file
     optional: true
-    description: Path to the registered validation data asset. The supported data
-      formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`.
+    description: Path to the registered validation data asset. The supported 
+      data formats are `jsonl`, `json`, `csv`, `tsv` and `parquet`.
     mode: rw_mount
 
   teacher_model_endpoint_name:
@@ -140,6 +142,11 @@ inputs:
     optional: true
     description: Start learning rate.
 
+  model_asset_id:
+    type: string
+    optional: false
+    description: The student model to finetune
+
 outputs:
   validation_info:
     type: uri_file
@@ -168,4 +175,5 @@ command: >-
   $[[--num_train_epochs ${{inputs.num_train_epochs}}]]
   $[[--per_device_train_batch_size ${{inputs.per_device_train_batch_size}}]]
   $[[--learning_rate ${{inputs.learning_rate}}]]
+  --model_asset_id '${{inputs.model_asset_id}}'
   --validation_info ${{outputs.validation_info}}

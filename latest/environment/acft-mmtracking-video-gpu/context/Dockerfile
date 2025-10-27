@@ -1,8 +1,8 @@
 # PTCA image
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu118-py310-torch222:biweekly.202410.1
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 USER root
-RUN apt-get -y update
+RUN apt-get -y update && apt-get install -y expat
 
 # Install required packages from pypi
 COPY requirements.txt .
@@ -21,7 +21,8 @@ RUN apt-get install -y gfortran libopenblas-dev liblapack-dev
 
 # vulnerability fixes - this will be removed once we update to MMTracking's latest version
 RUN pip install scipy==1.10.1
-RUN pip install gunicorn==22.0.0
+RUN pip install gunicorn==23.0.0
+RUN pip install onnx==1.17.0
 
 # It is recommended to upgrade to numpy version 1.23.5 to address the numpy.core.multiarray issue
 RUN pip install numpy==1.23.5
@@ -30,4 +31,5 @@ RUN pip install numpy==1.23.5
 # https://github.com/open-mmlab/mmdetection/issues/10962
 RUN pip install yapf==0.40.1
 
-# dummy number to change when needing to force rebuild without changing the definition: 1
+# Upgrade requests in the system Python (3.13) for fixing vulnerability
+RUN /opt/conda/bin/python3.13 -m pip install --upgrade requests urllib3 || true

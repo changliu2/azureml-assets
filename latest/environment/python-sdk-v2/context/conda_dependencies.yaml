@@ -2,18 +2,14 @@ name: python-sdk-v2
 channels:
   - conda-forge
 dependencies:
-  - python=3.8
+  - python=3.10
   - pip=23.3
   - pip:
-    - azure-ai-ml==1.21.0
-    - azure-identity==1.19.0
-    # v1 package for fetching run details
-    - azureml-core==1.57.0.post3
-    # v1 package for logging and telemetry. Switch to using application-insights and implementing custom logging
-    - azureml-telemetry==1.57.0
-    - cryptography==43.0.1
-    - certifi==2024.8.30
-    - urllib3==2.2.3
-    - paramiko==3.5.0
-    - idna==3.10
-    - tqdm==4.66.5
+    - azure-ai-ml==1.29.0
+    - azure-identity==1.25.1
+    - cryptography==46.0.3
+    - certifi==2025.10.5
+    - urllib3==2.5.0
+    - paramiko==4.0.0
+    - idna==3.11
+    - tqdm==4.67.1

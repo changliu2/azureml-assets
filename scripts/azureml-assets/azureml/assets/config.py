@@ -42,6 +42,10 @@ class AssetType(Enum):
     EVALUATIONRESULT = 'evaluationresult'
     MODEL = 'model'
     PROMPT = 'prompt'
+    AGENTBLUEPRINT = 'agentblueprint'
+    EVALUATOR = 'evaluator'
+    AGENTMANIFEST = 'agentmanifest'
+    APPTEMPLATE = 'apptemplate'
 
 
 class ComponentType(Enum):
@@ -135,7 +139,9 @@ DEFAULT_TEMPLATE_FILES = [DEFAULT_DOCKERFILE]
 EXCLUDE_PREFIX = "!"
 FULL_ASSET_NAME_DELIMITER = "/"
 FULL_ASSET_NAME_TEMPLATE = "{type}/{name}/{version}"
-GENERIC_ASSET_TYPES = [AssetType.EVALUATIONRESULT, AssetType.PROMPT]
+GENERIC_ASSET_TYPES = [AssetType.EVALUATIONRESULT, AssetType.PROMPT, AssetType.AGENTBLUEPRINT, AssetType.EVALUATOR,
+                       AssetType.APPTEMPLATE]
+OTHER_ASSET_TYPES = [AssetType.AGENTMANIFEST]
 PARTIAL_ASSET_NAME_TEMPLATE = "{type}/{name}"
 PUBLISH_LOCATION_HOSTNAMES = {PublishLocation.MCR: 'mcr.microsoft.com'}
 STANDARD_ASSET_TYPES = [AssetType.COMPONENT, AssetType.DATA, AssetType.ENVIRONMENT, AssetType.MODEL]
@@ -458,6 +464,11 @@ class Spec(Config):
         """Asset properties."""
         return self._yaml.get('properties', {})
 
+    @property
+    def system_metadata(self) -> Dict[str, str]:
+        """Asset system metadata."""
+        return self._yaml.get('system_metadata', {})
+
 
 class AssetPath:
     """Asset path."""
@@ -528,10 +539,9 @@ class AzureBlobstoreAssetPath(AssetPath):
         if _get_default_cloud_name() in [AzureEnvironments.ENV_DEFAULT,
                                          AzureEnvironments.ENV_US_GOVERNMENT,
                                          AzureEnvironments.ENV_CHINA]:
-            cloud_suffix = AzureBlobstoreAssetPath.AZURE_CLOUD_SUFFIX
+            self._cloud_suffix = AzureBlobstoreAssetPath.AZURE_CLOUD_SUFFIX
         else:
-            cloud_suffix = _get_storage_endpoint_from_metadata()
-        self._account_uri = f"https://{storage_name}.blob.{cloud_suffix}"
+            self._cloud_suffix = _get_storage_endpoint_from_metadata()
 
         # Its possible that the account URL may need additional tweaking to add a SAS
         # token if the account does not allow for anonymous access. However, for
@@ -583,16 +593,7 @@ class AzureBlobstoreAssetPath(AssetPath):
             # If we fail pass through to the next approach
             pass
 
-        # Our second approach is to use the azure python SDK to view the properties
-        # of the container. If the container allows for anonymous access then we can
-        # return the URI "as-is".
-        #
-        # This approach is slower than the first approach, which is why we
-        # tried the simple HTTP request approach first.
-        #
-        # It also requires Azure Credentials to be configured which may or may
-        # not be present depending on the execution environment. If these credentials
-        # do not exist then fail gracefully, return the URI "as-is", and hope for the best.
+        # Generate a SAS token for the container and append it to the URI
         try:
             blob_service_client = BlobServiceClient(
                 account_url=self._account_uri,
@@ -600,18 +601,9 @@ class AzureBlobstoreAssetPath(AssetPath):
                     process_timeout=AzureBlobstoreAssetPath.AZURE_CLI_PROCESS_LOGIN_TIMEOUT
                 )
             )
-            container_client = blob_service_client.get_container_client(container=self._container_name)
 
-            # If the container allows for anonymous access then we can return the URI "as-is"
-            if container_client.get_container_properties().public_access is not None:
-                self._token = ""
-                return uri
-
-            # Our final approach is to generate a SAS token for the container and append
-            # it to the URI
             start_time = datetime.now(timezone.utc)
             expiry_time = start_time + token_expiration
-
             key = blob_service_client.get_user_delegation_key(start_time, expiry_time)
 
             self._token = generate_container_sas(
@@ -657,11 +649,11 @@ class AzureBlobstoreAssetPath(AssetPath):
             List[dict]: List of files and their sizes. Dicts have keys `name` and `size`.
         """
         container_client = self.get_container_client()
-        container_prefix = self._container_path + "/"
+        container_prefix = self._container_path + "/" if self._container_path else None
         blobs = container_client.list_blobs(name_starts_with=container_prefix)
 
         # Remove prefix if desired
-        starting_pos = len(container_prefix) if strip_container_prefix else 0
+        starting_pos = len(container_prefix) if container_prefix and strip_container_prefix else 0
         blobs = [{'name': blob.name[starting_pos:], 'size': blob.size} for blob in blobs]
         return blobs
 
@@ -681,6 +673,11 @@ class AzureBlobstoreAssetPath(AssetPath):
         return file_contents
 
     @property
+    def _account_uri(self) -> str:
+        """Account URI."""
+        return f"https://{self._storage_name}.blob.{self._cloud_suffix}"
+
+    @property
     def uri(self) -> str:
         """Asset URI. Value is cached after first call."""
         if self._uri is None:
@@ -691,6 +688,12 @@ class AzureBlobstoreAssetPath(AssetPath):
     def storage_name(self) -> str:
         """Storage name."""
         return self._storage_name
+
+    @storage_name.setter
+    def storage_name(self, storage_name: str):
+        """Set storage name."""
+        self._storage_name = storage_name
+        self._uri = None
 
     @property
     def container_name(self) -> str:
@@ -791,7 +794,7 @@ class ModelConfig(Config):
             elif path_type == PathType.GIT.value:
                 self._path = GitAssetPath(branch=path['branch'], uri=path['uri'])
             elif path_type == PathType.LOCAL.value:
-                self._path = LocalAssetPath(local_path=path['uri'])
+                self._path = LocalAssetPath(uri=str(self._file_path / path['uri']))
             elif path_type == PathType.HTTP.value or path_type == PathType.FTP.value:
                 raise NotImplementedError("Support for HTTP and FTP is being added.")
         else:

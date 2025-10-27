@@ -1,15 +1,16 @@
 # PTCA image
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu118-py310-torch222:biweekly.202410.1
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 USER root
-RUN apt-get -y update
+RUN apt-get -y update && apt-get install -y expat
 
 # Install required packages from pypi
 COPY requirements.txt .
 RUN pip install -r requirements.txt --no-cache-dir
 
 # Vulnerability Fix
-RUN pip install gunicorn==22.0.0
+RUN pip install gunicorn==23.0.0
 RUN pip install certifi==2024.07.04
 
-# dummy number to change when needing to force rebuild without changing the definition: 1
+# Upgrade requests in the system Python (3.13) for fixing vulnerability
+RUN /opt/conda/bin/python3.13 -m pip install --upgrade requests urllib3 || true

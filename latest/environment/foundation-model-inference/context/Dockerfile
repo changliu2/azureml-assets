@@ -1,9 +1,10 @@
-FROM nvidia/cuda:12.1.1-devel-ubuntu20.04
+FROM nvidia/cuda:12.4.1-devel-ubuntu22.04
 
 ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=Etc/UTC \
     DEBIAN_FRONTEND=noninteractive
+
 RUN apt update && apt upgrade -y && apt install software-properties-common -y && add-apt-repository ppa:deadsnakes/ppa -y
 RUN apt install git -y
 
@@ -24,35 +25,24 @@ ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/default
 # Create conda environment with py310
 RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     python=3.10 \
-    -c conda-forge 
+    -c conda-forge --solver=classic
 
 ENV PATH $AZUREML_CONDA_ENVIRONMENT_PATH/bin:$PATH
 
 ENV CONDA_DEFAULT_ENV=$AZUREML_CONDA_ENVIRONMENT_PATH
+
 ENV CONDA_PREFIX=$AZUREML_CONDA_ENVIRONMENT_PATH
 
 WORKDIR /
 
-# Needed for megablocks
-RUN pip install torch~=2.4.0 --index-url https://download.pytorch.org/whl/cu121
-
-# mixtral specific
-ARG torch_cuda_arch_list='7.0 7.5 8.0 8.6 8.9 9.0+PTX'
-ENV TORCH_CUDA_ARCH_LIST=${torch_cuda_arch_list}
-RUN pip install git+https://github.com/stanford-futuredata/megablocks.git@5897cd6
-
-# For local testing
-# Need to copy src code and install in editable mode
-# COPY . .
-# RUN pip install -e ./ --no-cache-dir
-
 # When copied to assets repo, change to install from public pypi
-RUN pip install llm-optimized-inference==0.2.12 --no-cache-dir
+RUN pip install llm-optimized-inference==0.2.42 --no-cache-dir
 
-RUN pip uninstall transformers -y
-RUN pip uninstall -y vllm
-RUN pip install https://automlsamplenotebookdata.blob.core.windows.net/vllm/transformers-4.45.0.dev0-py3-none-any.whl
-RUN pip install https://automlsamplenotebookdata.blob.core.windows.net/vllm/vllm-0.6.1.post2+cu124-cp38-abi3-manylinux1_x86_64.whl
+# torch installation
+RUN pip install --no-cache-dir torch==2.8.0
+
+# Direct pip install from URL; avoids temporary file
+# RUN pip install --no-cache-dir https://automlsamplenotebookdata.blob.core.windows.net/flash-attn/flash_attn-2.7.4.post1-cp310-cp310-linux_x86_64.whl
 
 # clean conda and pip caches
 RUN rm -rf ~/.cache/pip

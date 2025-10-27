@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.1-cudnn8-ubuntu20.04:20240918.v1
+FROM mcr.microsoft.com/azureml/openmpi5.0-cuda12.4-ubuntu22.04:20251002.v1
 
 USER root
 
@@ -16,25 +16,47 @@ ENV ENABLE_METADATA=true
 
 RUN mkdir -p /etc/OpenCL/vendors && echo "libnvidia-opencl.so.1" > /etc/OpenCL/vendors/nvidia.icd
 RUN apt-get update && echo 'success updated apt-get!'
-RUN apt-get install -y --no-install-recommends cmake libboost-dev libboost-system-dev libboost-filesystem-dev
-RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH python=3.9 pip=22.1.2 -y
+RUN apt-get update && \
+    apt-get install -y --only-upgrade \
+        sudo \
+        systemd \
+        systemd-sysv \
+        libudev1 \
+        libpam-systemd \
+        systemd-timesyncd \
+        libsystemd0 \
+        libnss-systemd \
+        libpython3.10-stdlib \
+        python3.10 \
+        libpython3.10-minimal \
+        python3.10-minimal \
+        libpam0g \
+        libpam-modules-bin \
+        libpam-modules \
+        libpam-runtime \
+        libarchive13
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cmake \
+        libboost-dev \
+        libboost-system-dev \
+        libboost-filesystem-dev && \
+    apt-get clean && rm -rf /var/lib/apt/lists/*
+
+RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH python=3.9 pip=22.1.2 conda-forge::tzdata -y
 
 RUN conda run -p $AZUREML_CONDA_ENVIRONMENT_PATH
 
 ###############################
 # Pre-Build LightGBM
 ###############################
-RUN cd /usr/local/src && mkdir lightgbm && cd lightgbm && \
-    git clone --recursive --branch v3.2.1 --depth 1 https://github.com/microsoft/LightGBM && \
-    cd LightGBM && mkdir build && cd build && \
-    cmake -DUSE_GPU=1 -DOpenCL_LIBRARY=/usr/local/cuda/lib64/libOpenCL.so -DOpenCL_INCLUDE_DIR=/usr/local/cuda/include/ .. && \
-    make -j4
+RUN pip install --upgrade lightgbm==4.6.0
                 
 ###############################
 # Install GPU LightGBM and XgBoost
 ###############################
-RUN /bin/bash -c "cd /usr/local/src/lightgbm/LightGBM/python-package && python setup.py install --precompile && \
-    pip install --upgrade --force-reinstall xgboost==1.5.2 pandas==1.3.5"
+RUN pip install --upgrade --force-reinstall xgboost==1.5.2 pandas==1.5.3
 
 # begin conda create
 # Create conda environment
@@ -44,7 +66,7 @@ RUN conda install -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     scikit-learn=1.5.1 \
     holidays=0.29 \
     setuptools-git \
-    setuptools=72.1.0 \
+    setuptools=78.1.1 \
     wheel=0.44.0 \
     scipy=1.10.1 \
     'psutil>5.0.0,<6.0.0' \
@@ -57,18 +79,18 @@ RUN conda install -p $AZUREML_CONDA_ENVIRONMENT_PATH \
 # Install pip dependencies
 RUN pip install \
                 # begin pypi dependencies
-                azureml-core==1.57.0.post3 \
-                azureml-mlflow==1.57.0.post1 \
-                azureml-pipeline-core==1.57.0 \
-                azureml-telemetry==1.57.0 \
-                azureml-defaults==1.57.0.post1 \
-                azureml-interpret==1.57.0 \
-                azureml-responsibleai==1.57.0 \
-                azureml-automl-core==1.57.0 \
-                azureml-automl-runtime==1.57.0 \
-                azureml-train-automl-client==1.57.0 \
-                azureml-train-automl-runtime==1.57.0 \
-                azureml-dataset-runtime==1.57.0 \
+                azureml-core==1.60.0.post1 \
+                azureml-mlflow==1.60.0.post1 \
+                azureml-pipeline-core==1.60.0 \
+                azureml-telemetry==1.60.0 \
+                azureml-defaults==1.60.0 \
+                azureml-interpret==1.60.0 \
+                azureml-responsibleai==1.60.0 \
+                azureml-automl-core==1.60.0 \
+                azureml-automl-runtime==1.60.0 \
+                azureml-train-automl-client==1.60.0 \
+                azureml-train-automl-runtime==1.60.0 \
+                azureml-dataset-runtime==1.60.0 \
                 'azureml-model-management-sdk==1.0.1b6.post1' \
                 'azure-identity>=1.16.1' \
                 'inference-schema' \
@@ -78,6 +100,12 @@ RUN pip install \
                 'requests>=2.31.0' \
                 'certifi>=2023.07.22'
                 # end pypi dependencies
-# end pip install
+
+RUN pip install --upgrade 'h2>=4.3.0'
+# Upgrade requests and urllib3 in all relevant Python environments to meet vulnerability requirements
+RUN pip install --upgrade 'requests==2.32.4' 'urllib3==2.5.0' 'pillow==11.3.0' 'h2>=4.3.0'
+RUN /opt/miniconda/bin/pip install --upgrade 'requests==2.32.4' 'urllib3==2.5.0' 'pillow==11.3.0' 'h2>=4.3.0'|| true
+RUN $AZUREML_CONDA_ENVIRONMENT_PATH/bin/pip install --upgrade 'requests==2.32.4' 'urllib3==2.5.0' 'pillow==11.3.0' 'h2>=4.3.0' || true
+RUN rm -rf /opt/miniconda/pkgs/
 
 ENV LD_LIBRARY_PATH $AZUREML_CONDA_ENVIRONMENT_PATH/lib:$LD_LIBRARY_PATH

@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-cuda11.6-cudnn8-ubuntu20.04:20240918.v1
+FROM mcr.microsoft.com/azureml/openmpi5.0-cuda12.4-ubuntu22.04:20251002.v1
 
 ENV AZUREML_CONDA_ENVIRONMENT_PATH /azureml-envs/azureml-automl-dnn-forecasting-gpu
 # Prepend path to AzureML conda environment
@@ -12,6 +12,35 @@ ENV MLFLOW_MODEL_FOLDER="mlflow-model"
 
 ENV ENABLE_METADATA=true
 
+RUN apt-get update && \
+apt-get install -y --only-upgrade \
+    systemd \
+    libsystemd0 \
+    libnss-systemd \
+    libpam-systemd \
+    libudev1 \
+    systemd-sysv \
+    systemd-timesyncd \
+    python3.10 \
+    python3.10-minimal \
+    libarchive13 \
+    libpython3.10-minimal \
+    libpython3.10-stdlib \
+    libpam0g \
+    libpam-modules \
+    libpam-modules-bin \
+    libpam-runtime
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        cmake \
+        libboost-dev \
+        libboost-system-dev \
+        libboost-filesystem-dev && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+
 # begin conda create
 # Create conda environment
 RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
@@ -20,17 +49,17 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
     pip=22.1.2 \
     numpy~=1.23.5 \
     scikit-learn=1.5.1 \
-    pandas~=1.3.5 \
+    pandas~=1.5.3 \
     scipy=1.10.1 \
     'psutil>=5.2.2,<6.0.0' \
     tqdm \
-    setuptools=72.1.0 \
+    setuptools=78.1.1 \
     wheel=0.44.0 \
     # Install pytorch separately to speed up image build
     -c conda-forge -c pytorch -c anaconda && \
     conda install -p $AZUREML_CONDA_ENVIRONMENT_PATH \
-    pytorch=2.2.2 \
-    -c pytorch -c nvidia -y && \
+    pytorch=2.7.1 \
+    -c pytorch -c nvidia -c conda-forge -y && \
     # end conda dependencies
     conda run -p $AZUREML_CONDA_ENVIRONMENT_PATH && \
     conda clean -a -y
@@ -41,30 +70,37 @@ RUN conda create -p $AZUREML_CONDA_ENVIRONMENT_PATH \
 # GitPython>=3.1.41 is required for https://github.com/advisories/GHSA-2mqj-m65w-jghx and is not available in conda
 RUN pip install \
                 # begin pypi dependencies
-                azureml-core==1.57.0.post3 \
-                azureml-mlflow==1.57.0.post1 \
-                azureml-defaults==1.57.0.post1 \
-                azureml-telemetry==1.57.0 \
-                azureml-interpret==1.57.0 \
-                azureml-responsibleai==1.57.0 \
-                azureml-automl-core==1.57.0 \
-                azureml-automl-runtime==1.57.0 \
-                azureml-train-automl-client==1.57.0 \
-                azureml-train-automl-runtime==1.57.0 \
-                azureml-dataset-runtime==1.57.0 \
-                azureml-train-automl==1.57.0 \
-                azureml-contrib-automl-dnn-forecasting==1.57.0.post1 \
+                azureml-core==1.60.0.post1 \
+                azureml-mlflow==1.60.0.post1 \
+                azureml-defaults==1.60.0 \
+                azureml-telemetry==1.60.0 \
+                azureml-interpret==1.60.0 \
+                azureml-responsibleai==1.60.0 \
+                azureml-automl-core==1.60.0 \
+                azureml-automl-runtime==1.60.0 \
+                azureml-train-automl-client==1.60.0 \
+                azureml-train-automl-runtime==1.60.0 \
+                azureml-dataset-runtime==1.60.0 \
+                azureml-train-automl==1.60.0 \
+                azureml-contrib-automl-dnn-forecasting==1.60.0 \
                 'azure-identity>=1.16.1' \
                 'inference-schema' \
                 'xgboost==1.5.2' \
                 'cryptography>=42.0.5' \
-                'requests>=2.31.0' \
+                'requests>=2.32.4' \
                 'certifi>=2023.07.22' \
                 'spacy==3.7.4' \
                 'GitPython>=3.1.41' \
                 'https://aka.ms/automl-resources/packages/en_core_web_sm-3.7.1.tar.gz' \
-                'py-cpuinfo==5.0.0'
+                'py-cpuinfo==5.0.0' \
+                "pillow>=11.3.0"
                 # end pypi dependencies
 
 RUN HOROVOD_WITH_PYTORCH=1 pip install --no-cache-dir git+https://github.com/horovod/horovod@3a31d933a13c7c885b8a673f4172b17914ad334d
 # end pip install
+
+# Fix vulnerabilities
+RUN pip install --upgrade urllib3
+RUN pip install torch==2.7.1 torchvision==0.22.1
+RUN $AZUREML_CONDA_ENVIRONMENT_PATH/bin/pip install --upgrade 'h2>=4.3.0'
+RUN rm -rf /opt/miniconda/pkgs/

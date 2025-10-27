@@ -5,9 +5,14 @@ properties:
   SharedComputeCapacityEnabled: true
   languages: en
   inference-min-sku-spec: 24|1|220|64
-  inference-recommended-sku: Standard_NC24ads_A100_v4, Standard_NC48ads_A100_v4, Standard_NC96ads_A100_v4,
-    Standard_ND96amsr_A100_v4
+  inference-recommended-sku: Standard_NC24ads_A100_v4, Standard_NC48ads_A100_v4,
+    Standard_NC96ads_A100_v4, Standard_ND96amsr_A100_v4
 tags:
+  InferenceLegacyDate: '2025-06-09'
+  InferenceDeprecationDate: '2025-06-30'
+  InferenceRetirementDate: '2025-08-30'
+  FinetuneDeprecationDate: '2025-06-30'
+  FinetuneRetirementDate: '2025-08-30'
   evaluation: |
     In this release, the model enables multi-frame image understanding and reasoning which is based on valuable customer feedback. The hero example multi-frame capabilities include detailed image comparison, multi-image summarization/storytelling and video summarization, which have broad applications in many scenarios. We also observed performance improvement on most single image benchmarks, e.g., boosting MMMU performance from 40.2 to 43.0, MMBench performance from 80.5 to 81.9, document understanding benchmark TextVQA from 70.9 to 72.0. We believe most use cases will benefit from this release, but we encourage users to test the new model in their AI applications. We appreciate the enthusiastic adoption of the Phi-3 model family and continue to welcome all the feedback from the community.
 
@@ -146,25 +151,26 @@ tags:
   languages: "en"
   inputModalities: "text,image"
   trainingDataDate: "Aug 2024"
-  keywords: "Reasoning,Understanding,Low latency"
+  keywords: "Multimodal,Reasoning,Low latency"
   licenseDescription: "Microsoft.\nCopyright (c) Microsoft Corporation.\n\nMIT License\n\
     \nPermission is hereby granted, free of charge, to any person obtaining a copy\n\
     of this software and associated documentation files (the \"Software\"), to deal\n\
     in the Software without restriction, including without limitation the rights\n\
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies\
-    \ of the Software, and to permit persons to whom the Software is\nfurnished to\
-    \ do so, subject to the following conditions:\n\nThe above copyright notice and\
-    \ this permission notice shall be included in all\ncopies or substantial portions\
-    \ of the Software.\n\nTHE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY\
-    \ KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies
+    of the Software, and to permit persons to whom the Software is\nfurnished to do
+    so, subject to the following conditions:\n\nThe above copyright notice and this
+    permission notice shall be included in all\ncopies or substantial portions of
+    the Software.\n\nTHE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY,\
-    \ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR\
-    \ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR
+    IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
   playgroundRateLimitTier: "low"
   Featured: ""
   huggingface_model_id: ""
   maas-inference: "true"
+  deploymentOptions: UnifiedEndpointMaaS, MaaP, ServerlessMaaS
   license: mit
   disable-batch: "true"
   task: chat-completion
@@ -172,8 +178,9 @@ tags:
   SharedComputeCapacityEnabled: ""
   hiddenlayerscanned: ""
   _aml_system_vanity_registry: "azureml-phi"
-  inference_compute_allow_list: [Standard_NC24ads_A100_v4, Standard_NC48ads_A100_v4,
-    Standard_ND96amsr_A100_v4, Standard_NC96ads_A100_v4]
+  inference_compute_allow_list: [Standard_NC24ads_A100_v4, 
+      Standard_NC48ads_A100_v4, Standard_ND96amsr_A100_v4, 
+      Standard_NC96ads_A100_v4]
   inference_supported_envs:
   - vllm
   model_specific_defaults:
@@ -192,6 +199,7 @@ tags:
     logging_strategy: "steps"
     logging_steps: 10
     save_total_limit: 1
+  benchmark: "quality"
 version: 2
 description: |
   Phi-3.5-vision is a lightweight, state-of-the-art open multimodal model built upon datasets which include - synthetic data and filtered publicly available websites - with a focus on very high-quality, reasoning dense data both on text and vision. The model belongs to the Phi-3 model family, and the multimodal version comes with 128K context length (in tokens) it can support. The model underwent a rigorous enhancement process, incorporating both supervised fine-tuning and direct preference optimization to ensure precise instruction adherence and robust safety measures.

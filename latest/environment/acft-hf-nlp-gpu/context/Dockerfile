@@ -1,5 +1,5 @@
 #PTCA image
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu118-py310-torch222:biweekly.202410.1
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu126-py310-torch271:biweekly.202509.2
 
 USER root
 
@@ -13,12 +13,11 @@ COPY finetune_run.py /azureml/finetune/run.py
 
 RUN pip install -r requirements.txt --no-cache-dir
 
-# clean conda and pip caches
-RUN rm -rf ~/.cache/pip
-
-RUN pip install mlflow==2.14.3
+RUN pip install mlflow==3.1.0
 RUN python -m nltk.downloader punkt
 RUN python -m nltk.downloader punkt_tab
-RUN MAX_JOBS=4 pip install flash-attn==2.5.5 --no-build-isolation
+RUN MAX_JOBS=4 pip install flash-attn==2.8.1 --no-build-isolation
+RUN pip install nltk==3.9.1 # Pinning to fix the unsafe deserialization vulnerability
 
-# dummy number to change when needing to force rebuild without changing the definition: 1
+# clean conda and pip caches
+RUN rm -rf ~/.cache/pip

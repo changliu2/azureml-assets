@@ -1,8 +1,8 @@
 # PTCA image
-FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2004-cu118-py310-torch222:biweekly.202410.1
+FROM mcr.microsoft.com/aifx/acpt/stable-ubuntu2204-cu118-py310-torch271:biweekly.202509.2
 
 USER root
-RUN apt-get -y update
+RUN apt-get -y update && apt-get install -y expat
 
 # Install required packages from pypi
 COPY requirements.txt .
@@ -14,9 +14,12 @@ RUN pip install azureml-metrics==0.0.33
 # Vulnerability fix
 RUN pip install datasets==2.15.0
 RUN pip install pyarrow==14.0.1
-RUN pip install cryptography==43.0.1
-RUN pip install gunicorn==22.0.0
+RUN pip install cryptography==44.0.1
+RUN pip install gunicorn==23.0.0
 RUN pip install onnxruntime==1.17.3
-RUN pip install onnx==1.16.0
+RUN pip install onnx==1.17.0
 RUN pip install scikit-learn==1.5.0
-# dummy number to change when needing to force rebuild without changing the definition: 1
+RUN pip install azureml-acft-common-components==0.0.83
+RUN pip install azureml-acft-accelerator==0.0.83
+# Upgrade requests in the system Python (3.13) for fixing vulnerability
+RUN /opt/conda/bin/python3.13 -m pip install --upgrade requests urllib3 || true

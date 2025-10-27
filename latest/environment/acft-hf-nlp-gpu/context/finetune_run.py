@@ -10,6 +10,7 @@ import json
 from pathlib import Path
 import shutil
 import time
+import base64
 from dataclasses import dataclass, field, fields
 from typing import Optional, List
 
@@ -21,7 +22,7 @@ from azureml.acft.common_components.utils.error_handling.error_definitions impor
 from azureml.acft.common_components.utils.error_handling.swallow_all_exceptions_decorator import (
     swallow_all_exceptions,
 )
-from azureml.acft.common_components import get_logger_app, set_logging_parameters, LoggingLiterals
+from azureml.acft.common_components import get_logger_app, set_logging_parameters, LoggingLiterals, SystemSettings
 from azureml._common._error_definition.azureml_error import AzureMLError
 from azureml.acft.contrib.hf.nlp.constants.constants import Tasks
 
@@ -53,6 +54,27 @@ TASK_SPECIFIC_PARAMS = {
         }
     }
 }
+
+
+def retry_with_backoff(delay: int = 1, retries: int = 3):
+    """Retry with backoff."""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            current_retry = 0
+            current_delay = delay
+            while current_retry < retries:
+                try:
+                    return func(*args, **kwargs)
+                except Exception as e:
+                    current_retry += 1
+                    if current_retry >= retries:
+                        raise e
+                    logger.warning(f"Failed to execute function '{func.__name__}'. \
+                                   Retrying in {current_delay} seconds...")
+                    time.sleep(current_delay)
+                    current_delay *= 2
+        return wrapper
+    return decorator
 
 
 @dataclass
@@ -515,6 +537,21 @@ def parse_to_int(s):
                 )
 
 
+def parse_system_properties(arg_str: str):
+    """Parse system properties."""
+    if not arg_str:
+        return {}
+
+    try:
+        json_bytes = base64.b64decode(arg_str)
+        json_str = json_bytes.decode('utf-8')
+        system_properties_dict = json.loads(json_str)
+        return system_properties_dict
+    except ValueError:
+        logger.error(f"Failed to parse system properties: {arg_str}")
+        return {}
+
+
 def _initiate_run(completion_files_folder: str, model_selector_output: str,
                   preprocess_output: str, pytorch_model_folder: str, mlflow_model_folder: str):
     """Run the model selector, preprocess, finetune and registration script."""
@@ -524,6 +561,14 @@ def _initiate_run(completion_files_folder: str, model_selector_output: str,
     num_gpus = parse_to_int(decode_param_from_env_var("number_of_gpu_to_use_finetuning"))
     logger.info(f'Nodes are {num_nodes} , gpus are : {num_gpus}')
 
+    # get system properties
+    system_properties = parse_system_properties(decode_param_from_env_var("system_properties"))
+
+    # set log_level_debug as environment parameter
+    log_level_debug_enabled = \
+        system_properties.get(SystemSettings.LOG_LEVEL_DEBUG, False) if system_properties else False
+    os.environ[SystemSettings.LOG_LEVEL_DEBUG] = str(log_level_debug_enabled)
+
     # model selector
     cmd = [
         "python", "-m", "azureml.acft.contrib.hf.nlp.entry_point.finetune.model_selector",
@@ -531,7 +576,14 @@ def _initiate_run(completion_files_folder: str, model_selector_output: str,
         "--output_dir", model_selector_output
     ]
     add_optional_input(cmd, "mlflow_model_path")
-    add_optional_input(cmd, "pytorch_model_path")
+    pytorch_model_path = decode_input_from_env_var("pytorch_model_path")
+    if pytorch_model_path is not None and os.path.exists(pytorch_model_path):
+        pytorch_model_path_with_artifact = os.path.join(pytorch_model_path, "model_artifact", "model")
+        if os.path.exists(pytorch_model_path_with_artifact):
+            cmd += ["--pytorch_model_path", pytorch_model_path_with_artifact]
+        else:
+            cmd += ["--pytorch_model_path", pytorch_model_path]
+
     _run_subprocess_cmd(cmd, component_name="model_selector", completion_files_folder=completion_files_folder,
                         single_run=True, number_of_processes=num_gpus)
     # preprocess
@@ -554,14 +606,22 @@ def _initiate_run(completion_files_folder: str, model_selector_output: str,
     if os.path.isfile(validation_file_path):
         cmd += ["--validation_file_path", validation_file_path]
 
-    _run_subprocess_cmd(cmd, component_name="preprocess", completion_files_folder=completion_files_folder,
-                        single_run=True, number_of_processes=num_gpus)
+    num_retries = system_properties.get("num_retries", 3) if system_properties else 3
+
+    @retry_with_backoff(delay=2, retries=num_retries)
+    def _run_preprocess_cmd_with_retries():
+        _run_subprocess_cmd(cmd, component_name="preprocess", completion_files_folder=completion_files_folder,
+                            single_run=True, number_of_processes=num_gpus)
+
+    _run_preprocess_cmd_with_retries()
+
+    # finetune
     if not _is_multi_node_enabled():
         cmd_base = ["python", "-m", "torch.distributed.launch", "--nproc_per_node",
                     decode_param_from_env_var('number_of_gpu_to_use_finetuning'), "-m"]
     else:
         cmd_base = ["python", "-m"]
-    # finetune
+
     cmd = [
         "azureml.acft.contrib.hf.nlp.entry_point.finetune.finetune",
         "--apply_lora", decode_param_from_env_var('apply_lora'),

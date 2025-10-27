@@ -5,11 +5,17 @@ properties:
   SharedComputeCapacityEnabled: true
   languages: en
   inference-min-sku-spec: 48|2|440|128
-  inference-recommended-sku: Standard_NC48ads_A100_v4, Standard_NC96ads_A100_v4, Standard_ND96amsr_A100_v4
+  inference-recommended-sku: Standard_NC48ads_A100_v4, Standard_NC96ads_A100_v4,
+    Standard_ND96amsr_A100_v4
   finetuning-tasks: chat-completion
   finetune-min-sku-spec: 96|4|880|256
   finetune-recommended-sku: Standard_NC96ads_A100_v4, Standard_ND96amsr_A100_v4
 tags:
+  InferenceLegacyDate: '2025-06-09'
+  InferenceDeprecationDate: '2025-06-30'
+  InferenceRetirementDate: '2025-08-30'
+  FinetuneDeprecationDate: '2025-06-30'
+  FinetuneRetirementDate: '2025-08-30'
   notes: |-
     ## License
 
@@ -108,8 +114,8 @@ tags:
     | Robustness                  | 70.2 | 57.9 | 65.5 | 78.7 | 69.3 | 69.7 | 84.6 |
   freePlayground: "true"
   displayName: "Phi-3-medium instruct (128k)"
-  summary: "Same Phi-3-medium model, but with a larger context size for RAG or few\
-    \ shot prompting."
+  summary: "Same Phi-3-medium model, but with a larger context size for RAG or few
+    shot prompting."
   textContextWindow: 131072
   maxOutputTokens: 4096
   languages: "en"
@@ -121,33 +127,32 @@ tags:
     \nPermission is hereby granted, free of charge, to any person obtaining a copy\n\
     of this software and associated documentation files (the \"Software\"), to deal\n\
     in the Software without restriction, including without limitation the rights\n\
-    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies\
-    \ of the Software, and to permit persons to whom the Software is\nfurnished to\
-    \ do so, subject to the following conditions:\n\nThe above copyright notice and\
-    \ this permission notice shall be included in all\ncopies or substantial portions\
-    \ of the Software.\n\nTHE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY\
-    \ KIND, EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
+    to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\ncopies
+    of the Software, and to permit persons to whom the Software is\nfurnished to do
+    so, subject to the following conditions:\n\nThe above copyright notice and this
+    permission notice shall be included in all\ncopies or substantial portions of
+    the Software.\n\nTHE SOFTWARE IS PROVIDED *AS IS*, WITHOUT WARRANTY OF ANY KIND,
+    EXPRESS OR\nIMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n\
     FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n\
-    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY,\
-    \ WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR\
-    \ IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
+    AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\nLIABILITY,
+    WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\nOUT OF OR
+    IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\nSOFTWARE."
   playgroundRateLimitTier: "low"
   Featured: ""
   huggingface_model_id: ""
   maas-inference: true
+  deploymentOptions: "UnifiedEndpointMaaS, MaaP, ServerlessMaaS"
   license: mit
   disable-batch: "true"
   task: chat-completion
   author: Microsoft
   SharedComputeCapacityEnabled: ""
   hiddenlayerscanned: ""
-  maas-finetuning: true
-  maas-finetuning-offer: true
-  maas-finetuning-regions: eastus2
   _aml_system_vanity_registry: "azureml-phi"
-  inference_compute_allow_list: [Standard_NC48ads_A100_v4, Standard_ND96amsr_A100_v4,
-    Standard_NC96ads_A100_v4]
-  finetune_compute_allow_list: [Standard_ND96amsr_A100_v4, Standard_NC96ads_A100_v4]
+  inference_compute_allow_list: [Standard_NC48ads_A100_v4, 
+      Standard_ND96amsr_A100_v4, Standard_NC96ads_A100_v4]
+  finetune_compute_allow_list: [Standard_ND96amsr_A100_v4, 
+      Standard_NC96ads_A100_v4]
   inference_supported_envs:
   - vllm
   model_specific_defaults:
@@ -162,13 +167,15 @@ tags:
     per_device_eval_batch_size: 4
     gradient_accumulation_steps: 4
     learning_rate: 5e-6
+    learning_rate_min: 5e-7
+    learning_rate_max: 5e-5
     lr_scheduler_type: "cosine"
     logging_strategy: "steps"
     logging_steps: 10
     save_total_limit: 1
     max_seq_length: 4096
   benchmark: "quality"
-version: 4
+version: 7
 description: |-
   The Phi-3-Medium-128K-Instruct is a 14B parameters, lightweight, state-of-the-art open model trained with the Phi-3 datasets that includes both synthetic data and the filtered publicly available websites data with a focus on high-quality and reasoning dense properties.
   The model belongs to the Phi-3 family with the Medium version in two variants 4K and 128K which is the context length (in tokens) that it can support.

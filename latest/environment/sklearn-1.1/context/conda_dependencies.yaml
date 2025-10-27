@@ -9,12 +9,12 @@ dependencies:
 - scipy~=1.10.0
 - numpy~=1.22.0
 - pip:
-  - scikit-learn-intelex==2024.7.0
+  - scikit-learn-intelex==2025.9.0
   - wheel~=0.38.1
-  - azureml-core==1.57.0.post3
-  - azureml-defaults==1.57.0.post1
-  - azureml-mlflow==1.57.0.post1
-  - azureml-telemetry==1.57.0
+  - azureml-core==1.60.0.post1
+  - azureml-defaults==1.60.0
+  - azureml-mlflow==1.60.0.post1
+  - azureml-telemetry==1.60.0
   - scikit-learn~=1.1.0
   - joblib~=1.2.0
   # vulnerabilities

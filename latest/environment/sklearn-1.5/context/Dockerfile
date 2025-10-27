@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/azureml/openmpi4.1.0-ubuntu20.04:20240918.v1
+FROM mcr.microsoft.com/azureml/openmpi5.0-ubuntu24.04:20251002.v1
 
 WORKDIR /
 
@@ -8,6 +8,12 @@ ENV PATH=$CONDA_PREFIX/bin:$PATH
 
 # This is needed for mpi to locate libpython
 ENV LD_LIBRARY_PATH=$CONDA_PREFIX/lib:$LD_LIBRARY_PATH
+
+# Update package lists and reinstall system OpenSSL & OpenSSH
+RUN apt-get update && \
+    apt-get install --reinstall -y openssl libssl-dev openssh-server && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 # Create conda environment
 COPY conda_dependencies.yaml .
