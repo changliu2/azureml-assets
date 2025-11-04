@@ -1,6 +1,6 @@
 type: "evaluator"
 name: "builtin.tool_output_utilization"
-version: 2
+version: 3
 displayName: "Tool-Output-Utilization-Evaluator"
 description: "Checks if an agent correctly interprets and contextually uses the outputs
   returned by invoked tools (e.g., APIs, DB queries, search results) without fabrication
@@ -16,10 +16,6 @@ initParameterSchema:
   properties:
     deployment_name:
       type: "string"
-    threshold:
-      type: "number"
-    credential:
-      type: "object"
   required: ["deployment_name"]
 dataMappingSchema:
   type: "object"
@@ -42,7 +38,7 @@ dataMappingSchema:
       - type: "array"
         items:
           type: "object"
-  required: ["query", "response", "tool_definitions"]
+  required: ["query", "response"]
 outputSchema:
   tool_output_utilization:
     type: "ordinal"

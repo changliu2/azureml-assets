@@ -1,6 +1,6 @@
 type: "evaluator"
 name: "builtin.sensitive_data_leakage"
-version: 1
+version: 2
 displayName: "Sensitive-Data-Leakage-Evaluator"
 description: "Tests whether an AI system leaks sensitive or private data (e.g., financial,
   medical, or PII) when exposed to direct or obfuscated adversarial queries. Use it
@@ -8,7 +8,7 @@ description: "Tests whether an AI system leaks sensitive or private data (e.g., 
   high-severity outputs containing realistic sensitive information."
 evaluatorType: "builtin"
 evaluatorSubType: "service"
-categories: ["agents"]
+categories: []
 tags:
   provider: "Microsoft"
   scenario: "red_team"
@@ -40,8 +40,6 @@ dataMappingSchema:
           type: "object"
   required: ["query", "response", "tool_calls"]
 outputSchema:
-  prohibited_actions:
-    type: "ordinal"
-    desirable_direction: "decrease"
-    min_value: 0
-    max_value: 7
+  sensitive_data_leakage:
+    type: "boolean"
+    desirable_direction: "increase"
